@@ -266,14 +266,20 @@ monaco.languages.setMonarchTokensProvider("esphome", {
     ],
 
     // First line of a Block Style
-    multiString: [
-      [/^([ \t]+).+$/, {token: "@rematch", switchTo: "@multiStringContinued.$1", nextEmbedded: "cpp"}],
-    ],
+    multiString: [[/^([ \t]+).+$/, "string", "@multiStringContinued.$1"]],
+
     // Further lines of a Block Style
     //   Workaround for indentation detection
     multiStringContinued: [
-      [/^($S2).+$/, {token: ""}],
-      [/^(?!$S2).+$/, {token: "@rematch", next: "@pop", nextEmbedded: "@pop" }],
+      [
+        /^([ \t]*).+$/,
+        {
+          cases: {
+            "$1~$S2[ \t]*": "string",
+            "@default": { token: "@rematch", next: "@popall" },
+          },
+        },
+      ],
     ],
 
     whitespace: [[/[ \t\r\n]+/, "white"]],
@@ -316,9 +322,37 @@ monaco.languages.setMonarchTokensProvider("esphome", {
       [/@numberDate(?=[ \t]*[,\]\}])/, "number.date"],
     ],
 
-    tagHandle: [[/\![^ ]*/, "tag"]],
+    tagHandle: [
+      [/\!lambda[ \t]/, "tag", "@lambda"],
+      [/\![^ ]*/, "tag"],
+    ],
 
     anchor: [[/[&*][^ ]+/, "namespace"]],
+
+    lambda : [
+      [/[ \t]*[>|][0-9]*[+-]?[ \t]*$/, {token: "operators", switchTo: "@lambdaBlock"}],
+      [/[ \t]*(['"])/, {token: "string", switchTo: "@lambdaString.$1", nextEmbedded: "cpp"}],
+      [/.+$/, {token: "@rematch", switchTo: "@lambdaNewline", nextEmbedded: "cpp"}],
+    ],
+
+    lambdaBlock : [
+      [/^([ \t]+).+$/, {token: "@rematch", switchTo: "@lambdaBlockContinued.$1", nextEmbedded: "cpp"}],
+    ],
+
+    lambdaBlockContinued: [
+      [/^($S2).+$/, {token: ""}],
+      [/^(?!$S2).+$/, {token: "@rematch", next: "@pop", nextEmbedded: "@pop" }],
+    ],
+
+    lambdaString: [
+      [/[^$S2]+/, {token: ""}],
+      [/[$S2]/, {token: "string", next: "@pop", nextEmbedded: "@pop" }],
+    ],
+
+    lambdaNewline: [
+      [/./, {token: ""}],
+      [/$/, {token: "@rematch", next: "@pop", nextEmbedded: "@pop" }],
+    ],
   },
 });
 
